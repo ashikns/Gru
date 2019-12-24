@@ -1,0 +1,15 @@
+{
+    "name": "Gru.MaterialMaps",
+    "references": [
+        "GUID:648accef2fc6d86478fa74c5de94a27f"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

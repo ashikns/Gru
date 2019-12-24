@@ -1,0 +1,20 @@
+{
+    "name": "Gru.Importers",
+    "references": [
+        "GUID:648accef2fc6d86478fa74c5de94a27f",
+        "GUID:d83be8afbb158c84a9c7bf60afc28f10",
+        "GUID:a54351a8ac1846a438cf855fd8e6b9b9",
+        "GUID:58ba802bf280cdc47bdc26d3e46b453c",
+        "GUID:fc15a155a6ce5c04bb7062cc10beedcf",
+        "GUID:a4485deaac141e243b8ed93d7722f5cc"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,16 @@
+{
+    "name": "Gru.Extensions",
+    "references": [
+        "GUID:648accef2fc6d86478fa74c5de94a27f",
+        "GUID:a54351a8ac1846a438cf855fd8e6b9b9"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
