@@ -10,28 +10,22 @@ namespace Gru.Importers
 {
     public class BufferImporter
     {
-        private IList<GLTF.Schema.Buffer> _bufferSchemas;
-        private IList<GLTF.Schema.BufferView> _bufferViewSchemas;
-        private IFileLoader _fileLoader;
-        private string _modelFileName;
+        private readonly IList<GLTF.Schema.Buffer> _bufferSchemas;
+        private readonly IList<GLTF.Schema.BufferView> _bufferViewSchemas;
+        private readonly IFileLoader _fileLoader;
+        private readonly string _modelFileName;
 
         private readonly ConcurrentDictionary<int, Lazy<Task<byte[]>>> _buffers;
         private readonly ConcurrentDictionary<int, Lazy<Task<BufferView>>> _bufferViews;
 
-        public BufferImporter()
-        {
-            _buffers = new ConcurrentDictionary<int, Lazy<Task<byte[]>>>();
-            _bufferViews = new ConcurrentDictionary<int, Lazy<Task<BufferView>>>();
-        }
-
-        public void Assign(
+        public BufferImporter(
             IList<GLTF.Schema.Buffer> buffers,
             IList<GLTF.Schema.BufferView> bufferViews,
             IFileLoader fileLoader,
             string modelFileName)
         {
-            _buffers.Clear();
-            _bufferViews.Clear();
+            _buffers = new ConcurrentDictionary<int, Lazy<Task<byte[]>>>();
+            _bufferViews = new ConcurrentDictionary<int, Lazy<Task<BufferView>>>();
 
             _bufferSchemas = buffers;
             _bufferViewSchemas = bufferViews;

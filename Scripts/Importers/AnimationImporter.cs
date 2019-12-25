@@ -18,11 +18,11 @@ namespace Gru.Importers
             public string[] ChannelNames { get; set; }
         }
 
-        private IList<GLTF.Schema.Accessor> _accessorSchemas;
-        private BufferImporter _bufferImporter;
-        private NodeImporter _nodeImporter;
+        private readonly IList<GLTF.Schema.Accessor> _accessorSchemas;
+        private readonly BufferImporter _bufferImporter;
+        private readonly NodeImporter _nodeImporter;
 
-        public void Assign(
+        public AnimationImporter(
             IList<GLTF.Schema.Accessor> accessorSchemas,
             BufferImporter bufferImporter,
             NodeImporter nodeImporter)

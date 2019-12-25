@@ -10,21 +10,16 @@ namespace Gru.Importers
 {
     public class MaterialImporter
     {
-        private IList<GLTF.Schema.Material> _materialSchemas;
-        private TextureImporter _textureImporter;
+        private readonly IList<GLTF.Schema.Material> _materialSchemas;
+        private readonly TextureImporter _textureImporter;
 
         private readonly ConcurrentDictionary<int, Lazy<Task<Material>>> _materials;
 
-        public MaterialImporter()
-        {
-            _materials = new ConcurrentDictionary<int, Lazy<Task<Material>>>();
-        }
-
-        public void Assign(
+        public MaterialImporter(
             IList<GLTF.Schema.Material> materials,
             TextureImporter textureImporter)
         {
-            _materials.Clear();
+            _materials = new ConcurrentDictionary<int, Lazy<Task<Material>>>();
 
             _materialSchemas = materials;
             _textureImporter = textureImporter;
@@ -51,7 +46,7 @@ namespace Gru.Importers
                 if (!(materialSchema.Extensions[GLTF.Schema.GLTFExtension.KHR_materials_pbrSpecularGlossiness]
                     is GLTF.Extensions.KHR_materials_pbrSpecularGlossiness specGlossSchema))
                 {
-                    throw new System.Exception($"Expected instance of type {nameof(GLTF.Extensions.KHR_materials_pbrSpecularGlossiness)}");
+                    throw new Exception($"Expected instance of type {nameof(GLTF.Extensions.KHR_materials_pbrSpecularGlossiness)}");
                 }
 
                 var specGlossMap = new SpecularGlossinessMap

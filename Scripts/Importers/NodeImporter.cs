@@ -10,27 +10,22 @@ namespace Gru.Importers
 {
     public class NodeImporter
     {
-        private IList<GLTF.Schema.Node> _nodeSchemas;
-        private IList<GLTF.Schema.Skin> _skinSchemas;
-        private IList<GLTF.Schema.Accessor> _accessorSchemas;
-        private MeshImporter _meshImporter;
-        private BufferImporter _bufferImporter;
+        private readonly IList<GLTF.Schema.Node> _nodeSchemas;
+        private readonly IList<GLTF.Schema.Skin> _skinSchemas;
+        private readonly IList<GLTF.Schema.Accessor> _accessorSchemas;
+        private readonly MeshImporter _meshImporter;
+        private readonly BufferImporter _bufferImporter;
 
         private readonly ConcurrentDictionary<int, Lazy<Task<GameObject>>> _nodes;
 
-        public NodeImporter()
-        {
-            _nodes = new ConcurrentDictionary<int, Lazy<Task<GameObject>>>();
-        }
-
-        public void Assign(
+        public NodeImporter(
             IList<GLTF.Schema.Node> nodeSchemas,
             IList<GLTF.Schema.Skin> skinSchemas,
             IList<GLTF.Schema.Accessor> accessorSchemas,
             MeshImporter meshImporter,
             BufferImporter bufferImporter)
         {
-            _nodes.Clear();
+            _nodes = new ConcurrentDictionary<int, Lazy<Task<GameObject>>>();
 
             _nodeSchemas = nodeSchemas;
             _skinSchemas = skinSchemas;

@@ -61,25 +61,20 @@ namespace Gru.Importers
             public int[] Offset { get; }
         }
 
-        private IList<GLTF.Schema.Mesh> _meshSchemas;
-        private IList<GLTF.Schema.Accessor> _accessors;
-        private BufferImporter _bufferImporter;
-        private MaterialImporter _materialImporter;
+        private readonly IList<GLTF.Schema.Mesh> _meshSchemas;
+        private readonly IList<GLTF.Schema.Accessor> _accessors;
+        private readonly BufferImporter _bufferImporter;
+        private readonly MaterialImporter _materialImporter;
 
         private readonly ConcurrentDictionary<int, Lazy<Task<ImporterResults.RendererData>>> _meshes;
 
-        public MeshImporter()
-        {
-            _meshes = new ConcurrentDictionary<int, Lazy<Task<ImporterResults.RendererData>>>();
-        }
-
-        public void Assign(
+        public MeshImporter(
             IList<GLTF.Schema.Mesh> meshes,
             IList<GLTF.Schema.Accessor> accessors,
             BufferImporter bufferImporter,
             MaterialImporter materialImporter)
         {
-            _meshes.Clear();
+            _meshes = new ConcurrentDictionary<int, Lazy<Task<ImporterResults.RendererData>>>();
 
             _meshSchemas = meshes;
             _accessors = accessors;

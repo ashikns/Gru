@@ -10,27 +10,22 @@ namespace Gru.Importers
 {
     public class TextureImporter
     {
-        private IList<GLTF.Schema.Texture> _textureSchemas;
-        private IList<GLTF.Schema.Image> _imageSchemas;
-        private IList<GLTF.Schema.Sampler> _samplerSchemas;
-        private BufferImporter _bufferImporter;
-        private IFileLoader _fileLoader;
+        private readonly IList<GLTF.Schema.Texture> _textureSchemas;
+        private readonly IList<GLTF.Schema.Image> _imageSchemas;
+        private readonly IList<GLTF.Schema.Sampler> _samplerSchemas;
+        private readonly BufferImporter _bufferImporter;
+        private readonly IFileLoader _fileLoader;
 
         private readonly ConcurrentDictionary<int, Lazy<Task<Texture2D>>> _images;
 
-        public TextureImporter()
-        {
-            _images = new ConcurrentDictionary<int, Lazy<Task<Texture2D>>>();
-        }
-
-        public void Assign(
+        public TextureImporter(
             IList<GLTF.Schema.Texture> textures,
             IList<GLTF.Schema.Image> images,
             IList<GLTF.Schema.Sampler> samplers,
             BufferImporter bufferImporter,
             IFileLoader fileLoader)
         {
-            _images.Clear();
+            _images = new ConcurrentDictionary<int, Lazy<Task<Texture2D>>>();
 
             _textureSchemas = textures;
             _imageSchemas = images;
@@ -43,29 +38,32 @@ namespace Gru.Importers
         {
             var lazyResult = _images.GetOrAdd(
                 textureId.Key, new Lazy<Task<Texture2D>>(() => ConstructTexture(
-                    _textureSchemas[textureId.Key], isLinearColorSpace, _imageSchemas, _samplerSchemas, _bufferImporter, _fileLoader)));
+                    _textureSchemas[textureId.Key], isLinearColorSpace)));
+
             return lazyResult.Value;
         }
 
-        private static async Task<Texture2D> ConstructTexture(
+        private async Task<Texture2D> ConstructTexture(
             GLTF.Schema.Texture textureSchema,
-            bool isLinearColorSpace,
-            IList<GLTF.Schema.Image> images,
-            IList<GLTF.Schema.Sampler> samplers,
-            BufferImporter bufferImporter,
-            IFileLoader fileLoader)
+            bool isLinearColorSpace)
         {
-            var imageData = await Task.Run(() => ReadImageData(images[textureSchema.Source.Key], bufferImporter, fileLoader));
-
-            var texture = new Texture2D(0, 0, TextureFormat.RGBA32, true, isLinearColorSpace);
-            texture.LoadImage(imageData, true);
-            texture.name = textureSchema.Name;
+            var texture = new Texture2D(0, 0, TextureFormat.RGBA32, true, isLinearColorSpace)
+            {
+                name = textureSchema.Name
+            };
 
             if (textureSchema.Sampler != null)
             {
-                var sampler = samplers[textureSchema.Sampler.Key];
+                var sampler = _samplerSchemas[textureSchema.Sampler.Key];
                 texture.filterMode = GetUnityEquivalent(sampler.MinFilter);
                 texture.wrapMode = GetUnityEquivalent(sampler.WrapS);
+            }
+
+            var imageData = await Task.Run(() => ReadImageData(_imageSchemas[textureSchema.Source.Key], _bufferImporter, _fileLoader));
+
+            if (!texture.LoadImage(imageData, true))
+            {
+                Debug.LogError("Texture load failed");
             }
 
             return texture;

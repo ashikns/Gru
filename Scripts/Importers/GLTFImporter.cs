@@ -16,27 +16,6 @@ namespace Gru.Importers
     /// </summary>
     public static class GLTFImporter
     {
-        private static BufferImporter BufferImporter { get; set; }
-        private static TextureImporter TextureImporter { get; set; }
-        private static MaterialImporter MaterialImporter { get; set; }
-        private static MeshImporter MeshImporter { get; set; }
-        private static NodeImporter NodeImporter { get; set; }
-        private static AnimationImporter AnimationImporter { get; set; }
-
-        private static bool _intitialized;
-
-        public static void Initialize()
-        {
-            BufferImporter = new BufferImporter();
-            TextureImporter = new TextureImporter();
-            MaterialImporter = new MaterialImporter();
-            MeshImporter = new MeshImporter();
-            NodeImporter = new NodeImporter();
-            AnimationImporter = new AnimationImporter();
-
-            _intitialized = true;
-        }
-
         /// <summary>
         /// Imports a gltf/glb model as a Unity GameObject. Must be called from main thread.
         /// </summary>
@@ -44,12 +23,13 @@ namespace Gru.Importers
         /// <param name="fileLoader">Utility used to load additional images and buffers</param>
         public static async Task<GameObject> ImportAsync(string modelFile, IFileLoader fileLoader)
         {
-            if (!_intitialized)
-            {
-                Initialize();
-            }
-
             GLTFRoot glTFRoot = null;
+            BufferImporter bufferImporter = null;
+            TextureImporter textureImporter = null;
+            MaterialImporter materialImporter = null;
+            MeshImporter meshImporter = null;
+            NodeImporter nodeImporter = null;
+            AnimationImporter animationImporter = null;
 
             await Task.Run(() =>
             {
@@ -112,12 +92,12 @@ namespace Gru.Importers
                     }
                 }
 
-                BufferImporter.Assign(glTFRoot.Buffers, glTFRoot.BufferViews, fileLoader, Path.GetFileName(modelFile));
-                TextureImporter.Assign(glTFRoot.Textures, glTFRoot.Images, glTFRoot.Samplers, BufferImporter, fileLoader);
-                MaterialImporter.Assign(glTFRoot.Materials, TextureImporter);
-                MeshImporter.Assign(glTFRoot.Meshes, glTFRoot.Accessors, BufferImporter, MaterialImporter);
-                NodeImporter.Assign(glTFRoot.Nodes, glTFRoot.Skins, glTFRoot.Accessors, MeshImporter, BufferImporter);
-                AnimationImporter.Assign(glTFRoot.Accessors, BufferImporter, NodeImporter);
+                bufferImporter = new BufferImporter(glTFRoot.Buffers, glTFRoot.BufferViews, fileLoader, Path.GetFileName(modelFile));
+                textureImporter = new TextureImporter(glTFRoot.Textures, glTFRoot.Images, glTFRoot.Samplers, bufferImporter, fileLoader);
+                materialImporter = new MaterialImporter(glTFRoot.Materials, textureImporter);
+                meshImporter = new MeshImporter(glTFRoot.Meshes, glTFRoot.Accessors, bufferImporter, materialImporter);
+                nodeImporter = new NodeImporter(glTFRoot.Nodes, glTFRoot.Skins, glTFRoot.Accessors, meshImporter, bufferImporter);
+                animationImporter = new AnimationImporter(glTFRoot.Accessors, bufferImporter, nodeImporter);
             });
 
             var sceneSchema = glTFRoot.Scenes[glTFRoot.Scene.Key];
@@ -126,7 +106,7 @@ namespace Gru.Importers
 
             foreach (var nodeId in sceneSchema.Nodes)
             {
-                var node = await NodeImporter.GetNodeAsync(nodeId);
+                var node = await nodeImporter.GetNodeAsync(nodeId);
                 node.transform.SetParent(sceneObj.transform, false);
                 node.SetActive(true);
             }
@@ -137,7 +117,7 @@ namespace Gru.Importers
 
                 for (int i = 0; i < glTFRoot.Animations.Length; ++i)
                 {
-                    var clip = await AnimationImporter.ConstructAnimationClipAsync(glTFRoot.Animations[i], sceneObj.transform);
+                    var clip = await animationImporter.ConstructAnimationClipAsync(glTFRoot.Animations[i], sceneObj.transform);
                     clip.wrapMode = WrapMode.Loop;
                     animation.AddClip(clip, clip.name);
 
