@@ -1,5 +1,5 @@
-﻿using Gru.FileLoaders;
-using Gru.Helpers;
+﻿using Gru.Helpers;
+using Gru.Loaders;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

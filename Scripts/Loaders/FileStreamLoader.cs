@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
 
-namespace Gru.FileLoaders
+namespace Gru.Loaders
 {
     public class FileStreamLoader : IFileLoader
     {

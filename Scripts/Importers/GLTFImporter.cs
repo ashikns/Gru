@@ -1,5 +1,5 @@
-﻿using Gru.FileLoaders;
-using Gru.Helpers;
+﻿using Gru.Helpers;
+using Gru.Loaders;
 using Newtonsoft.Json;
 using System;
 using System.IO;
