@@ -73,6 +73,7 @@ namespace Gru.Importers
                 foreach (var child in children)
                 {
                     child.transform.SetParent(node.transform, false);
+                    child.SetActive(true);
                 }
             }
 
@@ -105,7 +106,6 @@ namespace Gru.Importers
                 }
             }
 
-            node.SetActive(true);
             return node;
         }
 

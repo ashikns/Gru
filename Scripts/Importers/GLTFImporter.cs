@@ -128,6 +128,7 @@ namespace Gru.Importers
             {
                 var node = await NodeImporter.GetNodeAsync(nodeId);
                 node.transform.SetParent(sceneObj.transform, false);
+                node.SetActive(true);
             }
 
             if (glTFRoot.Animations != null && glTFRoot.Animations.Length > 0)
