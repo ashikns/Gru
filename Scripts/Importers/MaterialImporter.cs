@@ -11,9 +11,7 @@ namespace Gru.Importers
     public class MaterialImporter
     {
         private IList<GLTF.Schema.Material> _materialSchemas;
-        private IList<GLTF.Schema.Texture> _textures;
-        private IList<GLTF.Schema.Sampler> _samplers;
-        private ImageImporter _imageImporter;
+        private TextureImporter _textureImporter;
 
         private readonly ConcurrentDictionary<int, Lazy<Task<Material>>> _materials;
 
@@ -24,16 +22,12 @@ namespace Gru.Importers
 
         public void Assign(
             IList<GLTF.Schema.Material> materials,
-            IList<GLTF.Schema.Texture> textures,
-            IList<GLTF.Schema.Sampler> samplers,
-            ImageImporter imageImporter)
+            TextureImporter textureImporter)
         {
             _materials.Clear();
 
             _materialSchemas = materials;
-            _textures = textures;
-            _samplers = samplers;
-            _imageImporter = imageImporter;
+            _textureImporter = textureImporter;
         }
 
         // Should be run from main thread
@@ -41,15 +35,13 @@ namespace Gru.Importers
         {
             var lazyResult = _materials.GetOrAdd(
                 materialId.Key, new Lazy<Task<Material>>(
-                    () => ConstructMaterial(_materialSchemas[materialId.Key], _textures, _samplers, _imageImporter)));
+                    () => ConstructMaterial(_materialSchemas[materialId.Key], _textureImporter)));
             return lazyResult.Value;
         }
 
         private static async Task<Material> ConstructMaterial(
             GLTF.Schema.Material materialSchema,
-            IList<GLTF.Schema.Texture> textures,
-            IList<GLTF.Schema.Sampler> samplers,
-            ImageImporter imageImporter)
+            TextureImporter textureImporter)
         {
             BaseMaterialMap materialMap;
 
@@ -71,8 +63,7 @@ namespace Gru.Importers
 
                 if (specGlossSchema.DiffuseTexture != null)
                 {
-                    var textureSchema = textures[specGlossSchema.DiffuseTexture.Index.Key];
-                    var texture = await ConstructTexture(textureSchema, samplers, imageImporter, false);
+                    var texture = await textureImporter.GetTextureAsync(specGlossSchema.DiffuseTexture.Index, false);
 
                     specGlossMap.DiffuseTexture = texture;
                     specGlossMap.DiffuseTexCoord = specGlossSchema.DiffuseTexture.TexCoord;
@@ -80,8 +71,7 @@ namespace Gru.Importers
 
                 if (specGlossSchema.SpecularGlossinessTexture != null)
                 {
-                    var textureSchema = textures[specGlossSchema.SpecularGlossinessTexture.Index.Key];
-                    var texture = await ConstructTexture(textureSchema, samplers, imageImporter, false);
+                    var texture = await textureImporter.GetTextureAsync(specGlossSchema.SpecularGlossinessTexture.Index, false);
 
                     specGlossMap.SpecularGlossinessTexture = texture;
                     specGlossMap.SpecularGlossinessTexCoord = specGlossSchema.SpecularGlossinessTexture.TexCoord;
@@ -102,8 +92,7 @@ namespace Gru.Importers
 
                 if (metallicSchema.BaseColorTexture != null)
                 {
-                    var textureSchema = textures[metallicSchema.BaseColorTexture.Index.Key];
-                    var texture = await ConstructTexture(textureSchema, samplers, imageImporter, false);
+                    var texture = await textureImporter.GetTextureAsync(metallicSchema.BaseColorTexture.Index, false);
 
                     metallicMap.BaseColorTexture = texture;
                     metallicMap.BaseColorTexCoord = metallicSchema.BaseColorTexture.TexCoord;
@@ -111,8 +100,7 @@ namespace Gru.Importers
 
                 if (metallicSchema.MetallicRoughnessTexture != null)
                 {
-                    var textureSchema = textures[metallicSchema.MetallicRoughnessTexture.Index.Key];
-                    var texture = await ConstructTexture(textureSchema, samplers, imageImporter, false);
+                    var texture = await textureImporter.GetTextureAsync(metallicSchema.MetallicRoughnessTexture.Index, false);
 
                     metallicMap.MetallicRoughnessTexture = texture;
                     metallicMap.BaseColorTexCoord = metallicSchema.MetallicRoughnessTexture.TexCoord;
@@ -130,8 +118,7 @@ namespace Gru.Importers
 
             if (materialSchema.NormalTexture != null)
             {
-                var textureSchema = textures[materialSchema.NormalTexture.Index.Key];
-                var texture = await ConstructTexture(textureSchema, samplers, imageImporter, true);
+                var texture = await textureImporter.GetTextureAsync(materialSchema.NormalTexture.Index, true);
 
                 materialMap.NormalTexture = texture;
                 materialMap.NormalTexCoord = materialSchema.NormalTexture.TexCoord;
@@ -140,8 +127,7 @@ namespace Gru.Importers
 
             if (materialSchema.OcclusionTexture != null)
             {
-                var textureSchema = textures[materialSchema.OcclusionTexture.Index.Key];
-                var texture = await ConstructTexture(textureSchema, samplers, imageImporter, true);
+                var texture = await textureImporter.GetTextureAsync(materialSchema.OcclusionTexture.Index, true);
 
                 materialMap.OcclusionTexture = texture;
                 materialMap.OcclusionTexCoord = materialSchema.OcclusionTexture.TexCoord;
@@ -150,74 +136,13 @@ namespace Gru.Importers
 
             if (materialSchema.EmissiveTexture != null)
             {
-                var textureSchema = textures[materialSchema.EmissiveTexture.Index.Key];
-                var texture = await ConstructTexture(textureSchema, samplers, imageImporter, false);
+                var texture = await textureImporter.GetTextureAsync(materialSchema.EmissiveTexture.Index, false);
 
                 materialMap.EmissiveTexture = texture;
                 materialMap.EmissiveTexCoord = materialSchema.EmissiveTexture.TexCoord;
             }
 
             return materialMap.Material;
-        }
-
-        private static async Task<Texture2D> ConstructTexture(
-            GLTF.Schema.Texture textureSchema,
-            IList<GLTF.Schema.Sampler> samplers,
-            ImageImporter imageImporter,
-            bool isLinear)
-        {
-            var imageData = await Task.Run(() => imageImporter.GetImageAsync(textureSchema.Source));
-
-            var texture = new Texture2D(0, 0, TextureFormat.RGBA32, true, isLinear);
-            texture.LoadImage(imageData, true);
-            texture.name = textureSchema.Name;
-
-            if (textureSchema.Sampler != null)
-            {
-                var sampler = samplers[textureSchema.Sampler.Key];
-                texture.filterMode = GetUnityEquivalent(sampler.MinFilter);
-                texture.wrapMode = GetUnityEquivalent(sampler.WrapS);
-            }
-
-            return texture;
-        }
-
-        private static FilterMode GetUnityEquivalent(GLTF.Schema.FilterMode? filterMode)
-        {
-            if (filterMode == null)
-            {
-                return FilterMode.Trilinear;
-            }
-
-            switch (filterMode.Value)
-            {
-                case GLTF.Schema.FilterMode.NEAREST:
-                case GLTF.Schema.FilterMode.NEAREST_MIPMAP_NEAREST:
-                case GLTF.Schema.FilterMode.LINEAR_MIPMAP_NEAREST:
-                    return FilterMode.Point;
-                case GLTF.Schema.FilterMode.LINEAR:
-                case GLTF.Schema.FilterMode.NEAREST_MIPMAP_LINEAR:
-                    return FilterMode.Bilinear;
-                case GLTF.Schema.FilterMode.LINEAR_MIPMAP_LINEAR:
-                    return FilterMode.Trilinear;
-                default:
-                    return FilterMode.Trilinear;
-            }
-        }
-
-        private static TextureWrapMode GetUnityEquivalent(GLTF.Schema.WrapMode wrapMode)
-        {
-            switch (wrapMode)
-            {
-                case GLTF.Schema.WrapMode.CLAMP_TO_EDGE:
-                    return TextureWrapMode.Clamp;
-                case GLTF.Schema.WrapMode.MIRRORED_REPEAT:
-                    return TextureWrapMode.Mirror;
-                case GLTF.Schema.WrapMode.REPEAT:
-                    return TextureWrapMode.Repeat;
-                default:
-                    return TextureWrapMode.Repeat;
-            }
         }
     }
 }

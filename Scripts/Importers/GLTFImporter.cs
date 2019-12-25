@@ -17,7 +17,7 @@ namespace Gru.Importers
     public static class GLTFImporter
     {
         private static BufferImporter BufferImporter { get; set; }
-        private static ImageImporter ImageImporter { get; set; }
+        private static TextureImporter TextureImporter { get; set; }
         private static MaterialImporter MaterialImporter { get; set; }
         private static MeshImporter MeshImporter { get; set; }
         private static NodeImporter NodeImporter { get; set; }
@@ -28,7 +28,7 @@ namespace Gru.Importers
         public static void Initialize()
         {
             BufferImporter = new BufferImporter();
-            ImageImporter = new ImageImporter();
+            TextureImporter = new TextureImporter();
             MaterialImporter = new MaterialImporter();
             MeshImporter = new MeshImporter();
             NodeImporter = new NodeImporter();
@@ -113,8 +113,8 @@ namespace Gru.Importers
                 }
 
                 BufferImporter.Assign(glTFRoot.Buffers, glTFRoot.BufferViews, fileLoader, Path.GetFileName(modelFile));
-                ImageImporter.Assign(glTFRoot.Images, BufferImporter, fileLoader);
-                MaterialImporter.Assign(glTFRoot.Materials, glTFRoot.Textures, glTFRoot.Samplers, ImageImporter);
+                TextureImporter.Assign(glTFRoot.Textures, glTFRoot.Images, glTFRoot.Samplers, BufferImporter, fileLoader);
+                MaterialImporter.Assign(glTFRoot.Materials, TextureImporter);
                 MeshImporter.Assign(glTFRoot.Meshes, glTFRoot.Accessors, BufferImporter, MaterialImporter);
                 NodeImporter.Assign(glTFRoot.Nodes, glTFRoot.Skins, glTFRoot.Accessors, MeshImporter, BufferImporter);
                 AnimationImporter.Assign(glTFRoot.Accessors, BufferImporter, NodeImporter);
