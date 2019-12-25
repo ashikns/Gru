@@ -1,11 +1,15 @@
 ﻿using Gru.GLTF.Schema;
 using Newtonsoft.Json;
 using System;
+using UnityEngine.Scripting;
 
 namespace Gru.GLTF.Converters
 {
     public class GLTFIdConverter : JsonConverter<GLTFId>
     {
+        [Preserve]
+        public GLTFIdConverter() { }
+
         public override GLTFId ReadJson(JsonReader reader, Type objectType, GLTFId existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
             if (reader.Value != null)

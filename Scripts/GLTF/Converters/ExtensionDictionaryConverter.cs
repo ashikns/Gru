@@ -3,11 +3,15 @@ using Gru.GLTF.Schema;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using UnityEngine.Scripting;
 
 namespace Gru.GLTF.Converters
 {
     public class ExtensionDictionaryConverter : JsonConverter<Dictionary<GLTFExtension, object>>
     {
+        [Preserve]
+        public ExtensionDictionaryConverter() { }
+
         public override Dictionary<GLTFExtension, object> ReadJson(JsonReader reader, Type objectType, Dictionary<GLTFExtension, object> existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
             if (reader.TokenType == JsonToken.Null)
