@@ -76,18 +76,16 @@ namespace Gru.Importers
                 }
                 else
                 {
-                    if (!GlbParser.IsValidGlb(modelDataStream))
+                    var glbDetails = GlbParser.Parse(modelDataStream);
+
+                    if (glbDetails.HasEmbeddedBuffer)
                     {
-                        throw new Exception("Stream does not contain valid glb data.");
+                        glbEmbeddedBuffer = new byte[glbDetails.BufferChunkLength];
+                        modelDataStream.Position = glbDetails.BufferChunkStart;
+                        modelDataStream.Read(glbEmbeddedBuffer, 0, glbDetails.BufferChunkLength);
                     }
 
-                    var bufferBounds = GlbParser.GetBufferChunkBounds(modelDataStream);
-                    glbEmbeddedBuffer = new byte[bufferBounds.Count];
-                    modelDataStream.Position = bufferBounds.Offset;
-                    modelDataStream.Read(glbEmbeddedBuffer, 0, (int)bufferBounds.Count);
-
-                    var jsonBounds = GlbParser.GetJsonChunkBounds(modelDataStream);
-                    modelDataStream.Position = jsonBounds.Offset;
+                    modelDataStream.Position = glbDetails.JsonChunkStart;
 
                     using (var jsonReader = new JsonTextReader(new StreamReader(modelDataStream)))
                     {

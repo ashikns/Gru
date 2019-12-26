@@ -1,8 +1,18 @@
 ﻿using System;
 using System.IO;
+using UnityEngine;
 
 namespace Gru.Helpers
 {
+    public struct GlbDetails
+    {
+        public int JsonChunkStart;
+        public int JsonChunkLength;
+        public bool HasEmbeddedBuffer;
+        public int BufferChunkStart;
+        public int BufferChunkLength;
+    }
+
     /// <summary>
     /// <see href="https://github.com/KhronosGroup/glTF/raw/master/specification/2.0/figures/glb2.png"/>
     /// </summary>
@@ -15,7 +25,7 @@ namespace Gru.Helpers
         private const int HeaderLength = 12;
         private const int ChunkHeaderLength = 8;
 
-        public static bool IsValidGlb(Stream glbData)
+        public static GlbDetails Parse(Stream glbData)
         {
             var header = new byte[HeaderLength];
             glbData.Position = 0;
@@ -26,47 +36,20 @@ namespace Gru.Helpers
             }
 
             var magic = BitConverter.ToUInt32(header, 0);
-            _ = BitConverter.ToUInt32(header, 4);
+            var version = BitConverter.ToUInt32(header, 4);
             var length = BitConverter.ToUInt32(header, 8);
 
             if (magic != MAGIC)
             {
-                return false;
+                throw new Exception("Could not read chunk header.");
             }
             if (length != glbData.Length)
             {
-                return false;
-            }
-            return true;
-        }
-
-        public static (uint Offset, uint Count) GetJsonChunkBounds(Stream glbData)
-        {
-            var chunkHeader = new byte[ChunkHeaderLength];
-            glbData.Position = HeaderLength;
-
-            if (glbData.Read(chunkHeader, 0, ChunkHeaderLength) != ChunkHeaderLength)
-            {
-                throw new Exception("Could not read chunk header.");
+                Debug.LogError("Mismatch in glb stored length and actual length");
             }
 
-            var chunkLength = BitConverter.ToUInt32(chunkHeader, 0);
-            var chunkType = BitConverter.ToUInt32(chunkHeader, 4);
+            Debug.Log("Glb container version: " + version);
 
-            if (glbData.Length < HeaderLength + ChunkHeaderLength + chunkLength)
-            {
-                throw new Exception("Chunk length overshoots stream length.");
-            }
-            if (chunkType != JSON)
-            {
-                throw new Exception("Chunktype of first chunk is not JSON");
-            }
-
-            return (HeaderLength + ChunkHeaderLength, chunkLength);
-        }
-
-        public static (uint Offset, uint Count) GetBufferChunkBounds(Stream glbData)
-        {
             var chunkHeader = new byte[ChunkHeaderLength];
             glbData.Position = HeaderLength;
 
@@ -76,11 +59,28 @@ namespace Gru.Helpers
             }
 
             var jsonChunkLength = BitConverter.ToUInt32(chunkHeader, 0);
+            var jsonChunkType = BitConverter.ToUInt32(chunkHeader, 4);
+
+            if (length < HeaderLength + ChunkHeaderLength + jsonChunkLength)
+            {
+                throw new Exception("Chunk length overshoots stream length.");
+            }
+            if (jsonChunkType != JSON)
+            {
+                throw new Exception("Chunktype of first chunk is not JSON");
+            }
+
             // chunks are padded to 4 byte boundary
             var bufferChunkStart = HeaderLength + ChunkHeaderLength + jsonChunkLength + (jsonChunkLength % 4);
-            if (bufferChunkStart >= glbData.Length - 8)
+            if (bufferChunkStart >= length - 8)
             {
-                throw new Exception("Stream is not long enough to have a binary chunk.");
+                // Stream is not long enough to have a binary chunk
+                return new GlbDetails
+                {
+                    JsonChunkStart = HeaderLength + ChunkHeaderLength,
+                    JsonChunkLength = (int)jsonChunkLength,
+                    HasEmbeddedBuffer = false
+                };
             }
 
             glbData.Position = bufferChunkStart;
@@ -90,19 +90,26 @@ namespace Gru.Helpers
                 throw new Exception("Could not read chunk header.");
             }
 
-            var chunkLength = BitConverter.ToUInt32(chunkHeader, 0);
-            var chunkType = BitConverter.ToUInt32(chunkHeader, 4);
+            var bufferChunkLength = BitConverter.ToUInt32(chunkHeader, 0);
+            var bufferChunkType = BitConverter.ToUInt32(chunkHeader, 4);
 
-            if (glbData.Length < bufferChunkStart + ChunkHeaderLength + chunkLength)
+            if (length < bufferChunkStart + ChunkHeaderLength + bufferChunkLength)
             {
                 throw new Exception("Chunk length overshoots stream length");
             }
-            if (chunkType != BIN)
+            if (bufferChunkType != BIN)
             {
                 throw new Exception("Chunktype of second chunk is not BIN");
             }
 
-            return (bufferChunkStart + ChunkHeaderLength, chunkLength);
+            return new GlbDetails
+            {
+                JsonChunkStart = HeaderLength + ChunkHeaderLength,
+                JsonChunkLength = (int)jsonChunkLength,
+                HasEmbeddedBuffer = true,
+                BufferChunkStart = (int)bufferChunkStart + ChunkHeaderLength,
+                BufferChunkLength = (int)bufferChunkLength
+            };
         }
     }
 }
