@@ -19,9 +19,39 @@ namespace Gru.Importers
         /// <summary>
         /// Imports a gltf/glb model as a Unity GameObject. Must be called from main thread.
         /// </summary>
-        /// <param name="modelFile">Complete path to the Gltf/Glb file.</param>
-        /// <param name="fileLoader">Utility used to load additional images and buffers</param>
-        public static async Task<GameObject> ImportAsync(string modelFile, IFileLoader fileLoader)
+        /// <param name="modelFilePath">Complete path to the Gltf/Glb file.</param>
+        /// <param name="fileLoader">Utility used to load additional images and buffers.</param>
+        /// <param name="textureLoader">Utility used to load textures.</param>
+        /// <returns>Created GameObject.</returns>
+        public static Task<GameObject> ImportAsync(
+            string modelFilePath, IFileLoader fileLoader, ITextureLoader textureLoader = null)
+        {
+            var fileExtension = Path.GetExtension(modelFilePath);
+
+            if (fileExtension == ".gltf")
+            {
+                return ImportAsync(File.Open(modelFilePath, FileMode.Open), false, fileLoader, textureLoader);
+            }
+            else if (fileExtension == ".glb")
+            {
+                return ImportAsync(File.Open(modelFilePath, FileMode.Open), true, fileLoader, textureLoader);
+            }
+            else
+            {
+                throw new Exception($"Unrecognized file extension {fileExtension}");
+            }
+        }
+
+        /// <summary>
+        /// Imports a gltf/glb model as a Unity GameObject. Must be called from main thread.
+        /// </summary>
+        /// <param name="modelDataStream">Stream used to access the model data. Function takes ownership of stream.</param>
+        /// <param name="isGlb">Whether the data is gltf or glb.</param>
+        /// <param name="fileLoader">Utility used to load additional images and buffers.</param>
+        /// <param name="textureLoader">Utility used to load textures.</param>
+        /// <returns>Created GameObject.</returns>
+        public static async Task<GameObject> ImportAsync(
+            Stream modelDataStream, bool isGlb, IFileLoader fileLoader, ITextureLoader textureLoader = null)
         {
             GLTFRoot glTFRoot = null;
             BufferImporter bufferImporter = null;
@@ -34,37 +64,35 @@ namespace Gru.Importers
             await Task.Run(() =>
             {
                 JsonSerializer serializer = new JsonSerializer();
-                var fileExtension = Path.GetExtension(modelFile);
 
-                if (fileExtension == ".gltf")
+                byte[] glbEmbeddedBuffer = null;
+
+                if (!isGlb)
                 {
-                    using (var stream = File.Open(modelFile, FileMode.Open))
-                    using (var jsonReader = new JsonTextReader(new StreamReader(stream)))
+                    using (var jsonReader = new JsonTextReader(new StreamReader(modelDataStream)))
                     {
                         glTFRoot = serializer.Deserialize<GLTFRoot>(jsonReader);
                     }
                 }
-                else if (fileExtension == ".glb")
-                {
-                    using (var stream = File.Open(modelFile, FileMode.Open))
-                    {
-                        if (!GlbParser.IsValidGlb(stream))
-                        {
-                            throw new Exception("Stream does not contain valid glb data.");
-                        }
-
-                        var (Offset, Count) = GlbParser.GetJsonChunkBounds(stream);
-                        stream.Position = Offset;
-
-                        using (var jsonReader = new JsonTextReader(new StreamReader(stream)))
-                        {
-                            glTFRoot = serializer.Deserialize<GLTFRoot>(jsonReader);
-                        }
-                    }
-                }
                 else
                 {
-                    throw new Exception($"Unrecognized file extension {fileExtension}");
+                    if (!GlbParser.IsValidGlb(modelDataStream))
+                    {
+                        throw new Exception("Stream does not contain valid glb data.");
+                    }
+
+                    var bufferBounds = GlbParser.GetBufferChunkBounds(modelDataStream);
+                    glbEmbeddedBuffer = new byte[bufferBounds.Count];
+                    modelDataStream.Position = bufferBounds.Offset;
+                    modelDataStream.Read(glbEmbeddedBuffer, 0, (int)bufferBounds.Count);
+
+                    var jsonBounds = GlbParser.GetJsonChunkBounds(modelDataStream);
+                    modelDataStream.Position = jsonBounds.Offset;
+
+                    using (var jsonReader = new JsonTextReader(new StreamReader(modelDataStream)))
+                    {
+                        glTFRoot = serializer.Deserialize<GLTFRoot>(jsonReader);
+                    }
                 }
 
                 if (glTFRoot.Asset.Version != "2.0")
@@ -92,13 +120,25 @@ namespace Gru.Importers
                     }
                 }
 
-                bufferImporter = new BufferImporter(glTFRoot.Buffers, glTFRoot.BufferViews, fileLoader, Path.GetFileName(modelFile));
-                textureImporter = new TextureImporter(glTFRoot.Textures, glTFRoot.Images, glTFRoot.Samplers, bufferImporter, fileLoader);
+                if (textureLoader == null)
+                {
+                    textureLoader = new SimpleTextureLoader(fileLoader);
+                }
+
+                bufferImporter = new BufferImporter(glTFRoot.Buffers, glTFRoot.BufferViews, fileLoader);
+                textureImporter = new TextureImporter(glTFRoot.Textures, glTFRoot.Images, glTFRoot.Samplers, bufferImporter, textureLoader);
                 materialImporter = new MaterialImporter(glTFRoot.Materials, textureImporter);
                 meshImporter = new MeshImporter(glTFRoot.Meshes, glTFRoot.Accessors, bufferImporter, materialImporter);
                 nodeImporter = new NodeImporter(glTFRoot.Nodes, glTFRoot.Skins, glTFRoot.Accessors, meshImporter, bufferImporter);
                 animationImporter = new AnimationImporter(glTFRoot.Accessors, bufferImporter, nodeImporter);
+
+                if (glbEmbeddedBuffer != null)
+                {
+                    bufferImporter.SetGlbEmbeddedBuffer(glbEmbeddedBuffer);
+                }
             });
+
+            modelDataStream.Dispose();
 
             var sceneSchema = glTFRoot.Scenes[glTFRoot.Scene.Key];
             var sceneObj = new GameObject(!string.IsNullOrEmpty(sceneSchema.Name)

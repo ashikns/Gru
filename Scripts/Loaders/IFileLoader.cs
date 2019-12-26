@@ -1,16 +1,15 @@
-﻿using System.IO;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace Gru.Loaders
 {
     public interface IFileLoader
     {
         /// <summary>
-        /// Opens the give file for reading. e.g. a FileStream
+        /// Reads the data from file as bytes.
         /// </summary>
         /// <param name="relativePath">Path to the file to be opened.
         /// Path is relative to folder which contains the .gltf/.glb file.</param>
-        /// <returns>Stream which can read the file contents.</returns>
-        Task<Stream> OpenFile(string relativePath);
+        /// <returns>Contents of the file.</returns>
+        Task<byte[]> ReadContentsAsync(string relativePath);
     }
 }
