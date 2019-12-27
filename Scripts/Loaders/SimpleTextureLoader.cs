@@ -15,7 +15,7 @@ namespace Gru.Loaders
 
         public async Task<Texture2D> CreateTexture(string relativePath, bool isLinear)
         {
-            var imageData = await Task.Run(() => _fileLoader.ReadContentsAsync(relativePath));
+            var imageData = await _fileLoader.ReadContentsAsync(relativePath);
             var texture = new Texture2D(0, 0, TextureFormat.RGBA32, true, isLinear);
             texture.LoadImage(imageData, true);
             return texture;

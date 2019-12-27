@@ -58,7 +58,7 @@ namespace Gru.Importers
             }
             else if (image.BufferView != null)
             {
-                var bufferView = await Task.Run(() => _bufferImporter.GetBufferViewAsync(image.BufferView));
+                var bufferView = await _bufferImporter.GetBufferViewAsync(image.BufferView);
                 return await _textureLoader.CreateTexture(bufferView.Data, image.MimeType.Value.ToString(), isLinear);
             }
             else
