@@ -1,7 +1,6 @@
 ﻿using Gru.Extensions;
 using Gru.MaterialMaps;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -13,25 +12,23 @@ namespace Gru.Importers
         private readonly IList<GLTF.Schema.Material> _materialSchemas;
         private readonly TextureImporter _textureImporter;
 
-        private readonly ConcurrentDictionary<int, Lazy<Task<Material>>> _materials;
+        private readonly Lazy<Task<Material>>[] _materials;
 
         public MaterialImporter(
             IList<GLTF.Schema.Material> materials,
             TextureImporter textureImporter)
         {
-            _materials = new ConcurrentDictionary<int, Lazy<Task<Material>>>();
-
             _materialSchemas = materials;
             _textureImporter = textureImporter;
+
+            _materials = new Lazy<Task<Material>>[_materialSchemas.Count];
         }
 
         // Should be run from main thread
         public Task<Material> GetMaterialAsync(GLTF.Schema.GLTFId materialId)
         {
-            var lazyResult = _materials.GetOrAdd(
-                materialId.Key, new Lazy<Task<Material>>(
-                    () => ConstructMaterial(_materialSchemas[materialId.Key], _textureImporter)));
-            return lazyResult.Value;
+            return _materials.ThreadSafeGetOrAdd(
+                materialId.Key, () => ConstructMaterial(_materialSchemas[materialId.Key], _textureImporter));
         }
 
         private static async Task<Material> ConstructMaterial(

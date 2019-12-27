@@ -1,6 +1,5 @@
 ﻿using Gru.Extensions;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -66,7 +65,7 @@ namespace Gru.Importers
         private readonly BufferImporter _bufferImporter;
         private readonly MaterialImporter _materialImporter;
 
-        private readonly ConcurrentDictionary<int, Lazy<Task<ImporterResults.RendererData>>> _meshes;
+        private readonly Lazy<Task<ImporterResults.RendererData>>[] _meshes;
 
         public MeshImporter(
             IList<GLTF.Schema.Mesh> meshes,
@@ -74,20 +73,18 @@ namespace Gru.Importers
             BufferImporter bufferImporter,
             MaterialImporter materialImporter)
         {
-            _meshes = new ConcurrentDictionary<int, Lazy<Task<ImporterResults.RendererData>>>();
-
             _meshSchemas = meshes;
             _accessors = accessors;
             _bufferImporter = bufferImporter;
             _materialImporter = materialImporter;
+
+            _meshes = new Lazy<Task<ImporterResults.RendererData>>[_meshSchemas.Count];
         }
 
         // Must be run on main thread
         public Task<ImporterResults.RendererData> GetMeshAsync(GLTF.Schema.GLTFId meshId)
         {
-            var lazyResult = _meshes.GetOrAdd(
-                meshId.Key, new Lazy<Task<ImporterResults.RendererData>>(() => ConstructMeshAsync(meshId)));
-            return lazyResult.Value;
+            return _meshes.ThreadSafeGetOrAdd(meshId.Key, () => ConstructMeshAsync(meshId));
         }
 
         private async Task<ImporterResults.RendererData> ConstructMeshAsync(GLTF.Schema.GLTFId meshId)

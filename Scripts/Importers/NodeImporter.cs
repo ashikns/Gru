@@ -1,6 +1,5 @@
 ﻿using Gru.Extensions;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,7 +15,7 @@ namespace Gru.Importers
         private readonly MeshImporter _meshImporter;
         private readonly BufferImporter _bufferImporter;
 
-        private readonly ConcurrentDictionary<int, Lazy<Task<GameObject>>> _nodes;
+        private readonly Lazy<Task<GameObject>>[] _nodes;
 
         public NodeImporter(
             IList<GLTF.Schema.Node> nodeSchemas,
@@ -25,21 +24,19 @@ namespace Gru.Importers
             MeshImporter meshImporter,
             BufferImporter bufferImporter)
         {
-            _nodes = new ConcurrentDictionary<int, Lazy<Task<GameObject>>>();
-
             _nodeSchemas = nodeSchemas;
             _skinSchemas = skinSchemas;
             _accessorSchemas = accessorSchemas;
             _meshImporter = meshImporter;
             _bufferImporter = bufferImporter;
+
+            _nodes = new Lazy<Task<GameObject>>[_nodeSchemas.Count];
         }
 
         // Must be run on main thread
         public Task<GameObject> GetNodeAsync(GLTF.Schema.GLTFId nodeId)
         {
-            var lazyResult = _nodes.GetOrAdd(
-                nodeId.Key, new Lazy<Task<GameObject>>(() => ConstructNodeAsync(nodeId)));
-            return lazyResult.Value;
+            return _nodes.ThreadSafeGetOrAdd(nodeId.Key, () => ConstructNodeAsync(nodeId));
         }
 
         private async Task<GameObject> ConstructNodeAsync(GLTF.Schema.GLTFId nodeId)

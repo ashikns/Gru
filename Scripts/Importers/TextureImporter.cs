@@ -1,7 +1,7 @@
-﻿using Gru.Helpers;
+﻿using Gru.Extensions;
+using Gru.Helpers;
 using Gru.Loaders;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -16,7 +16,7 @@ namespace Gru.Importers
         private readonly BufferImporter _bufferImporter;
         private readonly ITextureLoader _textureLoader;
 
-        private readonly ConcurrentDictionary<int, Lazy<Task<Texture2D>>> _images;
+        private readonly Lazy<Task<Texture2D>>[] _textures;
 
         public TextureImporter(
             IList<GLTF.Schema.Texture> textures,
@@ -25,22 +25,19 @@ namespace Gru.Importers
             BufferImporter bufferImporter,
             ITextureLoader textureLoader)
         {
-            _images = new ConcurrentDictionary<int, Lazy<Task<Texture2D>>>();
-
             _textureSchemas = textures;
             _imageSchemas = images;
             _samplerSchemas = samplers;
             _bufferImporter = bufferImporter;
             _textureLoader = textureLoader;
+
+            _textures = new Lazy<Task<Texture2D>>[_textureSchemas.Count];
         }
 
-        public Task<Texture2D> GetTextureAsync(GLTF.Schema.GLTFId textureId, bool isLinearColorSpace)
+        public Task<Texture2D> GetTextureAsync(GLTF.Schema.GLTFId textureId, bool isLInear)
         {
-            var lazyResult = _images.GetOrAdd(
-                textureId.Key, new Lazy<Task<Texture2D>>(() => ConstructTexture(
-                    _textureSchemas[textureId.Key], isLinearColorSpace)));
-
-            return lazyResult.Value;
+            return _textures.ThreadSafeGetOrAdd(
+                textureId.Key, () => ConstructTexture(_textureSchemas[textureId.Key], isLInear));
         }
 
         private async Task<Texture2D> ConstructTexture(GLTF.Schema.Texture textureSchema, bool isLinear)

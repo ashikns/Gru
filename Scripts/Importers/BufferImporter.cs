@@ -1,8 +1,8 @@
-﻿using Gru.Helpers;
+﻿using Gru.Extensions;
+using Gru.Helpers;
 using Gru.ImporterResults;
 using Gru.Loaders;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,20 +15,20 @@ namespace Gru.Importers
         private readonly IList<GLTF.Schema.BufferView> _bufferViewSchemas;
         private readonly IFileLoader _fileLoader;
 
-        private readonly ConcurrentDictionary<int, Lazy<Task<byte[]>>> _buffers;
-        private readonly ConcurrentDictionary<int, Lazy<Task<BufferView>>> _bufferViews;
+        private readonly Lazy<Task<byte[]>>[] _buffers;
+        private readonly Lazy<Task<BufferView>>[] _bufferViews;
 
         public BufferImporter(
             IList<GLTF.Schema.Buffer> buffers,
             IList<GLTF.Schema.BufferView> bufferViews,
             IFileLoader fileLoader)
         {
-            _buffers = new ConcurrentDictionary<int, Lazy<Task<byte[]>>>();
-            _bufferViews = new ConcurrentDictionary<int, Lazy<Task<BufferView>>>();
-
             _bufferSchemas = buffers;
             _bufferViewSchemas = bufferViews;
             _fileLoader = fileLoader;
+
+            _buffers = new Lazy<Task<byte[]>>[_bufferSchemas.Count];
+            _bufferViews = new Lazy<Task<BufferView>>[_bufferViewSchemas.Count];
         }
 
         public void SetGlbEmbeddedBuffer(byte[] embeddedBufferData)
@@ -40,14 +40,12 @@ namespace Gru.Importers
                 return;
             }
 
-            _buffers.TryAdd(_bufferSchemas.IndexOf(noUriBuffer), new Lazy<Task<byte[]>>(() => Task.FromResult(embeddedBufferData)));
+            _buffers[_bufferSchemas.IndexOf(noUriBuffer)] = new Lazy<Task<byte[]>>(() => Task.FromResult(embeddedBufferData));
         }
 
         public Task<BufferView> GetBufferViewAsync(GLTF.Schema.GLTFId bufferViewId)
         {
-            var lazyResult = _bufferViews.GetOrAdd(
-                bufferViewId.Key, new Lazy<Task<BufferView>>(() => ConstructBufferViewAsync(bufferViewId)));
-            return lazyResult.Value;
+            return _bufferViews.ThreadSafeGetOrAdd(bufferViewId.Key, () => ConstructBufferViewAsync(bufferViewId));
         }
 
         private async Task<BufferView> ConstructBufferViewAsync(GLTF.Schema.GLTFId bufferViewId)
@@ -55,9 +53,8 @@ namespace Gru.Importers
             var bufferViewSchema = _bufferViewSchemas[bufferViewId.Key];
 
             var bufferSchema = _bufferSchemas[bufferViewSchema.Buffer.Key];
-            var lazyResult = _buffers.GetOrAdd(
-                bufferViewSchema.Buffer.Key, new Lazy<Task<byte[]>>(() => ReadBuffer(bufferSchema, _fileLoader)));
-            var buffer = await lazyResult.Value;
+            var buffer = await _buffers.ThreadSafeGetOrAdd(
+                bufferViewSchema.Buffer.Key, () => ReadBuffer(bufferSchema, _fileLoader));
 
             var bufferView = new BufferView
             {
