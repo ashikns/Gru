@@ -26,20 +26,7 @@ namespace Gru.Importers
         public static Task<GameObject> ImportAsync(
             string modelFilePath, IFileLoader fileLoader, ITextureLoader textureLoader = null)
         {
-            var fileExtension = Path.GetExtension(modelFilePath);
-
-            if (fileExtension == ".gltf")
-            {
-                return ImportAsync(File.Open(modelFilePath, FileMode.Open), false, fileLoader, textureLoader);
-            }
-            else if (fileExtension == ".glb")
-            {
-                return ImportAsync(File.Open(modelFilePath, FileMode.Open), true, fileLoader, textureLoader);
-            }
-            else
-            {
-                throw new Exception($"Unrecognized file extension {fileExtension}");
-            }
+            return ImportAsync(File.Open(modelFilePath, FileMode.Open), fileLoader, textureLoader);
         }
 
         /// <summary>
@@ -51,7 +38,7 @@ namespace Gru.Importers
         /// <param name="textureLoader">Utility used to load textures.</param>
         /// <returns>Created GameObject.</returns>
         public static async Task<GameObject> ImportAsync(
-            Stream modelDataStream, bool isGlb, IFileLoader fileLoader, ITextureLoader textureLoader = null)
+            Stream modelDataStream, IFileLoader fileLoader, ITextureLoader textureLoader = null)
         {
             GLTFRoot glTFRoot = null;
             BufferImporter bufferImporter = null;
@@ -63,12 +50,13 @@ namespace Gru.Importers
 
             await Task.Run(() =>
             {
+                var glbDetails = GlbParser.Parse(modelDataStream);
                 JsonSerializer serializer = new JsonSerializer();
-
                 byte[] glbEmbeddedBuffer = null;
 
-                if (!isGlb)
+                if (glbDetails == null)
                 {
+                    modelDataStream.Position = 0;
                     using (var jsonReader = new JsonTextReader(new StreamReader(modelDataStream)))
                     {
                         glTFRoot = serializer.Deserialize<GLTFRoot>(jsonReader);
@@ -76,7 +64,6 @@ namespace Gru.Importers
                 }
                 else
                 {
-                    var glbDetails = GlbParser.Parse(modelDataStream);
 
                     if (glbDetails.HasEmbeddedBuffer)
                     {

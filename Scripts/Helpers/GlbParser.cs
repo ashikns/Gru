@@ -4,13 +4,13 @@ using UnityEngine;
 
 namespace Gru.Helpers
 {
-    public struct GlbDetails
+    public class GlbDetails
     {
-        public int JsonChunkStart;
-        public int JsonChunkLength;
-        public bool HasEmbeddedBuffer;
-        public int BufferChunkStart;
-        public int BufferChunkLength;
+        public int JsonChunkStart { get; set; }
+        public int JsonChunkLength { get; set; }
+        public bool HasEmbeddedBuffer { get; set; }
+        public int BufferChunkStart { get; set; }
+        public int BufferChunkLength { get; set; }
     }
 
     /// <summary>
@@ -41,7 +41,7 @@ namespace Gru.Helpers
 
             if (magic != MAGIC)
             {
-                throw new Exception("Could not read chunk header.");
+                return null;
             }
             if (length != glbData.Length)
             {
