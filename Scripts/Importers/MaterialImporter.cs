@@ -9,25 +9,27 @@ namespace Gru.Importers
 {
     public class MaterialImporter
     {
-        public Func<IMetallicRoughnessMap> MetalRoughFactory { get; set; }
-        public Func<ISpecularGlossinessMap> SpecGlossFactory { get; set; }
-
         private readonly IList<GLTF.Schema.Material> _materialSchemas;
         private readonly TextureImporter _textureImporter;
+
+        private readonly Func<IMetallicRoughnessMap> _metalRoughFactory;
+        private readonly Func<ISpecularGlossinessMap> _specGlossFactory;
 
         private readonly Lazy<Task<Material>>[] _materials;
 
         public MaterialImporter(
             IList<GLTF.Schema.Material> materials,
-            TextureImporter textureImporter)
+            TextureImporter textureImporter,
+            Func<IMetallicRoughnessMap> metalRoughFactory,
+            Func<ISpecularGlossinessMap> specGlossFactory)
         {
             _materialSchemas = materials;
             _textureImporter = textureImporter;
 
             _materials = new Lazy<Task<Material>>[_materialSchemas.Count];
 
-            MetalRoughFactory = () => new MetallicRoughnessMap();
-            SpecGlossFactory = () => new SpecularGlossinessMap();
+            _metalRoughFactory = metalRoughFactory;
+            _specGlossFactory = specGlossFactory;
         }
 
         // Should be run from main thread
@@ -50,7 +52,7 @@ namespace Gru.Importers
                     throw new Exception($"Expected instance of type {nameof(GLTF.Extensions.KHR_materials_pbrSpecularGlossiness)}");
                 }
 
-                var specGlossMap = SpecGlossFactory.Invoke();
+                var specGlossMap = _specGlossFactory.Invoke();
 
                 specGlossMap.DiffuseFactor = specGlossSchema.DiffuseFactor.ToUnityColor();
                 specGlossMap.SpecularFactor = specGlossSchema.SpecularFactor.ToUnityVector3Raw();
@@ -78,7 +80,7 @@ namespace Gru.Importers
             {
                 var metallicSchema = materialSchema.PbrMetallicRoughness;
 
-                var metallicMap = MetalRoughFactory.Invoke();
+                var metallicMap = _metalRoughFactory.Invoke();
 
                 metallicMap.BaseColorFactor = metallicSchema.BaseColorFactor.ToUnityColor();
                 metallicMap.MetallicFactor = metallicSchema.MetallicFactor;

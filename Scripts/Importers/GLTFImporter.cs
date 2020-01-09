@@ -1,5 +1,6 @@
 ﻿using Gru.Helpers;
 using Gru.Loaders;
+using Gru.MaterialMaps;
 using Newtonsoft.Json;
 using System;
 using System.IO;
@@ -10,6 +11,25 @@ using GLTFRoot = Gru.GLTF.Schema.GLTFRoot;
 
 namespace Gru.Importers
 {
+    public class ImportOptions
+    {
+        public static ImportOptions MakeDefault(IFileLoader fileLoader)
+        {
+            return new ImportOptions
+            {
+                FileLoader = fileLoader,
+                TextureLoader = new SimpleTextureLoader(fileLoader),
+                MetalRoughFactory = () => new MetallicRoughnessMap(),
+                SpecGlossFactory = () => new SpecularGlossinessMap()
+            };
+        }
+
+        public IFileLoader FileLoader { get; set; }
+        public ITextureLoader TextureLoader { get; set; }
+        public Func<IMetallicRoughnessMap> MetalRoughFactory { get; set; }
+        public Func<ISpecularGlossinessMap> SpecGlossFactory { get; set; }
+    }
+
     /// <summary>
     /// See <see href="https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/figures/dictionary-objects.png"/>
     /// for a top level view of dependencies (which decides import order).
@@ -17,28 +37,25 @@ namespace Gru.Importers
     public static class GLTFImporter
     {
         /// <summary>
-        /// Imports a gltf/glb model as a Unity GameObject. Must be called from main thread.
+        /// Imports a gltf/glb model stored on the local filesystem as a Unity GameObject. Must be called from main thread.
         /// </summary>
         /// <param name="modelFilePath">Complete path to the Gltf/Glb file.</param>
-        /// <param name="fileLoader">Utility used to load additional images and buffers.</param>
-        /// <param name="textureLoader">Utility used to load textures.</param>
         /// <returns>Created GameObject.</returns>
-        public static Task<GameObject> ImportAsync(
-            string modelFilePath, IFileLoader fileLoader, ITextureLoader textureLoader = null)
+        public static Task<GameObject> ImportAsync(string modelFilePath)
         {
-            return ImportAsync(File.Open(modelFilePath, FileMode.Open), fileLoader, textureLoader);
+            return ImportAsync(
+                File.Open(modelFilePath, FileMode.Open),
+                ImportOptions.MakeDefault(new SimpleFileLoader(Path.GetDirectoryName(modelFilePath))));
         }
+
 
         /// <summary>
         /// Imports a gltf/glb model as a Unity GameObject. Must be called from main thread.
         /// </summary>
         /// <param name="modelDataStream">Stream used to access the model data. Function takes ownership of stream.</param>
-        /// <param name="isGlb">Whether the data is gltf or glb.</param>
-        /// <param name="fileLoader">Utility used to load additional images and buffers.</param>
-        /// <param name="textureLoader">Utility used to load textures.</param>
-        /// <returns>Created GameObject.</returns>
-        public static async Task<GameObject> ImportAsync(
-            Stream modelDataStream, IFileLoader fileLoader, ITextureLoader textureLoader = null)
+        /// <param name="importOptions">Customizations applied to importer</param>
+        /// <returns>Created Gameobject</returns>
+        public static async Task<GameObject> ImportAsync(Stream modelDataStream, ImportOptions importOptions)
         {
             GLTFRoot glTFRoot = null;
             BufferImporter bufferImporter = null;
@@ -105,14 +122,9 @@ namespace Gru.Importers
                     }
                 }
 
-                if (textureLoader == null)
-                {
-                    textureLoader = new SimpleTextureLoader(fileLoader);
-                }
-
-                bufferImporter = new BufferImporter(glTFRoot.Buffers, glTFRoot.BufferViews, fileLoader);
-                textureImporter = new TextureImporter(glTFRoot.Textures, glTFRoot.Images, glTFRoot.Samplers, bufferImporter, textureLoader);
-                materialImporter = new MaterialImporter(glTFRoot.Materials, textureImporter);
+                bufferImporter = new BufferImporter(glTFRoot.Buffers, glTFRoot.BufferViews, importOptions.FileLoader);
+                textureImporter = new TextureImporter(glTFRoot.Textures, glTFRoot.Images, glTFRoot.Samplers, bufferImporter, importOptions.TextureLoader);
+                materialImporter = new MaterialImporter(glTFRoot.Materials, textureImporter, importOptions.MetalRoughFactory, importOptions.SpecGlossFactory);
                 meshImporter = new MeshImporter(glTFRoot.Meshes, glTFRoot.Accessors, bufferImporter, materialImporter);
                 nodeImporter = new NodeImporter(glTFRoot.Nodes, glTFRoot.Skins, glTFRoot.Accessors, meshImporter, bufferImporter);
                 animationImporter = new AnimationImporter(glTFRoot.Accessors, bufferImporter, nodeImporter);
