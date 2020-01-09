@@ -27,8 +27,8 @@ namespace Gru.Importers
             _bufferViewSchemas = bufferViews;
             _fileLoader = fileLoader;
 
-            _buffers = new Lazy<Task<byte[]>>[_bufferSchemas.Count];
-            _bufferViews = new Lazy<Task<BufferView>>[_bufferViewSchemas.Count];
+            _buffers = new Lazy<Task<byte[]>>[_bufferSchemas?.Count ?? 0];
+            _bufferViews = new Lazy<Task<BufferView>>[_bufferViewSchemas?.Count ?? 0];
         }
 
         public void SetGlbEmbeddedBuffer(byte[] embeddedBufferData)

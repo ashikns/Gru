@@ -31,7 +31,7 @@ namespace Gru.Importers
             _bufferImporter = bufferImporter;
             _textureLoader = textureLoader;
 
-            _textures = new Lazy<Task<Texture2D>>[_textureSchemas.Count];
+            _textures = new Lazy<Task<Texture2D>>[_textureSchemas?.Count ?? 0];
         }
 
         public Task<Texture2D> GetTextureAsync(GLTF.Schema.GLTFId textureId, bool isLInear)

@@ -30,7 +30,7 @@ namespace Gru.Importers
             _meshImporter = meshImporter;
             _bufferImporter = bufferImporter;
 
-            _nodes = new Lazy<Task<GameObject>>[_nodeSchemas.Count];
+            _nodes = new Lazy<Task<GameObject>>[_nodeSchemas?.Count ?? 0];
         }
 
         // Must be run on main thread

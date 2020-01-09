@@ -26,7 +26,7 @@ namespace Gru.Importers
             _materialSchemas = materials;
             _textureImporter = textureImporter;
 
-            _materials = new Lazy<Task<Material>>[_materialSchemas.Count];
+            _materials = new Lazy<Task<Material>>[_materialSchemas?.Count ?? 0];
 
             _metalRoughFactory = metalRoughFactory;
             _specGlossFactory = specGlossFactory;

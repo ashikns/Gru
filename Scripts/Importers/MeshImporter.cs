@@ -78,7 +78,7 @@ namespace Gru.Importers
             _bufferImporter = bufferImporter;
             _materialImporter = materialImporter;
 
-            _meshes = new Lazy<Task<ImporterResults.RendererData>>[_meshSchemas.Count];
+            _meshes = new Lazy<Task<ImporterResults.RendererData>>[_meshSchemas?.Count ?? 0];
         }
 
         // Must be run on main thread
