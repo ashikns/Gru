@@ -4,7 +4,7 @@ using UnityEngine.Rendering;
 
 namespace Gru.MaterialMaps
 {
-	public class BaseMaterialMap
+	public class BaseMaterialMap : IBaseMaterialMap
 	{
 		public Material Material { get; }
 
@@ -223,6 +223,8 @@ namespace Gru.MaterialMaps
 
 			shader.maximumLOD = maxLOD;
 			Material = new Material(shader);
+
+			VertexColorsEnabled = true;
 		}
 	}
 }

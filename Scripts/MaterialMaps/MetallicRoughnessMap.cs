@@ -2,7 +2,7 @@
 
 namespace Gru.MaterialMaps
 {
-	public class MetallicRoughnessMap : BaseMaterialMap
+	public class MetallicRoughnessMap : BaseMaterialMap, IMetallicRoughnessMap
 	{
 		// LOD levels in shader - 300, 150
 		public MetallicRoughnessMap(int maxLOD = 300) : base("GLTF/PbrMetallicRoughness", maxLOD)

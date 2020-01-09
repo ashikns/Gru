@@ -9,6 +9,9 @@ namespace Gru.Importers
 {
     public class MaterialImporter
     {
+        public Func<IMetallicRoughnessMap> MetalRoughFactory { get; set; }
+        public Func<ISpecularGlossinessMap> SpecGlossFactory { get; set; }
+
         private readonly IList<GLTF.Schema.Material> _materialSchemas;
         private readonly TextureImporter _textureImporter;
 
@@ -22,20 +25,21 @@ namespace Gru.Importers
             _textureImporter = textureImporter;
 
             _materials = new Lazy<Task<Material>>[_materialSchemas.Count];
+
+            MetalRoughFactory = () => new MetallicRoughnessMap();
+            SpecGlossFactory = () => new SpecularGlossinessMap();
         }
 
         // Should be run from main thread
         public Task<Material> GetMaterialAsync(GLTF.Schema.GLTFId materialId)
         {
             return _materials.ThreadSafeGetOrAdd(
-                materialId.Key, () => ConstructMaterial(_materialSchemas[materialId.Key], _textureImporter));
+                materialId.Key, () => ConstructMaterial(_materialSchemas[materialId.Key]));
         }
 
-        private static async Task<Material> ConstructMaterial(
-            GLTF.Schema.Material materialSchema,
-            TextureImporter textureImporter)
+        private async Task<Material> ConstructMaterial(GLTF.Schema.Material materialSchema)
         {
-            BaseMaterialMap materialMap;
+            IBaseMaterialMap materialMap;
 
             if (materialSchema.Extensions != null &&
                 materialSchema.Extensions.ContainsKey(GLTF.Schema.GLTFExtension.KHR_materials_pbrSpecularGlossiness))
@@ -46,16 +50,15 @@ namespace Gru.Importers
                     throw new Exception($"Expected instance of type {nameof(GLTF.Extensions.KHR_materials_pbrSpecularGlossiness)}");
                 }
 
-                var specGlossMap = new SpecularGlossinessMap
-                {
-                    DiffuseFactor = specGlossSchema.DiffuseFactor.ToUnityColor(),
-                    SpecularFactor = specGlossSchema.SpecularFactor.ToUnityVector3Raw(),
-                    GlossinessFactor = specGlossSchema.GlossinessFactor
-                };
+                var specGlossMap = SpecGlossFactory.Invoke();
+
+                specGlossMap.DiffuseFactor = specGlossSchema.DiffuseFactor.ToUnityColor();
+                specGlossMap.SpecularFactor = specGlossSchema.SpecularFactor.ToUnityVector3Raw();
+                specGlossMap.GlossinessFactor = specGlossSchema.GlossinessFactor;
 
                 if (specGlossSchema.DiffuseTexture != null)
                 {
-                    var texture = await textureImporter.GetTextureAsync(specGlossSchema.DiffuseTexture.Index, false);
+                    var texture = await _textureImporter.GetTextureAsync(specGlossSchema.DiffuseTexture.Index, false);
 
                     specGlossMap.DiffuseTexture = texture;
                     specGlossMap.DiffuseTexCoord = specGlossSchema.DiffuseTexture.TexCoord;
@@ -63,7 +66,7 @@ namespace Gru.Importers
 
                 if (specGlossSchema.SpecularGlossinessTexture != null)
                 {
-                    var texture = await textureImporter.GetTextureAsync(specGlossSchema.SpecularGlossinessTexture.Index, false);
+                    var texture = await _textureImporter.GetTextureAsync(specGlossSchema.SpecularGlossinessTexture.Index, false);
 
                     specGlossMap.SpecularGlossinessTexture = texture;
                     specGlossMap.SpecularGlossinessTexCoord = specGlossSchema.SpecularGlossinessTexture.TexCoord;
@@ -75,16 +78,15 @@ namespace Gru.Importers
             {
                 var metallicSchema = materialSchema.PbrMetallicRoughness;
 
-                var metallicMap = new MetallicRoughnessMap
-                {
-                    BaseColorFactor = metallicSchema.BaseColorFactor.ToUnityColor(),
-                    MetallicFactor = metallicSchema.MetallicFactor,
-                    RoughnessFactor = metallicSchema.RoughnessFactor
-                };
+                var metallicMap = MetalRoughFactory.Invoke();
+
+                metallicMap.BaseColorFactor = metallicSchema.BaseColorFactor.ToUnityColor();
+                metallicMap.MetallicFactor = metallicSchema.MetallicFactor;
+                metallicMap.RoughnessFactor = metallicSchema.RoughnessFactor;
 
                 if (metallicSchema.BaseColorTexture != null)
                 {
-                    var texture = await textureImporter.GetTextureAsync(metallicSchema.BaseColorTexture.Index, false);
+                    var texture = await _textureImporter.GetTextureAsync(metallicSchema.BaseColorTexture.Index, false);
 
                     metallicMap.BaseColorTexture = texture;
                     metallicMap.BaseColorTexCoord = metallicSchema.BaseColorTexture.TexCoord;
@@ -92,7 +94,7 @@ namespace Gru.Importers
 
                 if (metallicSchema.MetallicRoughnessTexture != null)
                 {
-                    var texture = await textureImporter.GetTextureAsync(metallicSchema.MetallicRoughnessTexture.Index, false);
+                    var texture = await _textureImporter.GetTextureAsync(metallicSchema.MetallicRoughnessTexture.Index, false);
 
                     metallicMap.MetallicRoughnessTexture = texture;
                     metallicMap.BaseColorTexCoord = metallicSchema.MetallicRoughnessTexture.TexCoord;
@@ -104,13 +106,12 @@ namespace Gru.Importers
             materialMap.Material.name = materialSchema.Name;
             materialMap.AlphaMode = materialSchema.AlphaMode;
             materialMap.AlphaCutoff = materialSchema.AlphaCutoff;
-            materialMap.VertexColorsEnabled = true;
 
             materialMap.EmissiveFactor = materialSchema.EmissiveFactor.ToUnityColor();
 
             if (materialSchema.NormalTexture != null)
             {
-                var texture = await textureImporter.GetTextureAsync(materialSchema.NormalTexture.Index, true);
+                var texture = await _textureImporter.GetTextureAsync(materialSchema.NormalTexture.Index, true);
 
                 materialMap.NormalTexture = texture;
                 materialMap.NormalTexCoord = materialSchema.NormalTexture.TexCoord;
@@ -119,7 +120,7 @@ namespace Gru.Importers
 
             if (materialSchema.OcclusionTexture != null)
             {
-                var texture = await textureImporter.GetTextureAsync(materialSchema.OcclusionTexture.Index, true);
+                var texture = await _textureImporter.GetTextureAsync(materialSchema.OcclusionTexture.Index, true);
 
                 materialMap.OcclusionTexture = texture;
                 materialMap.OcclusionTexCoord = materialSchema.OcclusionTexture.TexCoord;
@@ -128,7 +129,7 @@ namespace Gru.Importers
 
             if (materialSchema.EmissiveTexture != null)
             {
-                var texture = await textureImporter.GetTextureAsync(materialSchema.EmissiveTexture.Index, false);
+                var texture = await _textureImporter.GetTextureAsync(materialSchema.EmissiveTexture.Index, false);
 
                 materialMap.EmissiveTexture = texture;
                 materialMap.EmissiveTexCoord = materialSchema.EmissiveTexture.TexCoord;

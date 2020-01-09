@@ -2,7 +2,7 @@
 
 namespace Gru.MaterialMaps
 {
-	public class SpecularGlossinessMap : BaseMaterialMap
+	public class SpecularGlossinessMap : BaseMaterialMap, ISpecularGlossinessMap
 	{
 		// LOD levels in shader - 300, 150
 		public SpecularGlossinessMap(int maxLOD = 300) : base("GLTF/PbrSpecularGlossiness", maxLOD)
