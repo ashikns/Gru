@@ -34,13 +34,13 @@ namespace Gru.Importers
             _textures = new Lazy<Task<Texture2D>>[_textureSchemas?.Count ?? 0];
         }
 
-        public Task<Texture2D> GetTextureAsync(GLTF.Schema.GLTFId textureId, bool isLInear)
+        public Task<Texture2D> GetTextureAsync(GLTF.Schema.GLTFId textureId, TextureTarget target)
         {
             return _textures.ThreadSafeGetOrAdd(
-                textureId.Key, () => ConstructTexture(_textureSchemas[textureId.Key], isLInear));
+                textureId.Key, () => ConstructTexture(_textureSchemas[textureId.Key], target));
         }
 
-        private async Task<Texture2D> ConstructTexture(GLTF.Schema.Texture textureSchema, bool isLinear)
+        private async Task<Texture2D> ConstructTexture(GLTF.Schema.Texture textureSchema, TextureTarget target)
         {
             var image = _imageSchemas[textureSchema.Source.Key];
             Texture2D texture;
@@ -49,17 +49,17 @@ namespace Gru.Importers
             {
                 if (UriHelper.TryParseDataUri(image.Uri, out var embeddedData))
                 {
-                    texture = await _textureLoader.CreateTexture(new ArraySegment<byte>(embeddedData), image.MimeType.Value.ToString(), isLinear);
+                    texture = await _textureLoader.CreateTexture(new ArraySegment<byte>(embeddedData), image.MimeType.Value.ToString(), target);
                 }
                 else
                 {
-                    texture = await _textureLoader.CreateTexture(image.Uri, isLinear);
+                    texture = await _textureLoader.CreateTexture(image.Uri, target);
                 }
             }
             else if (image.BufferView != null)
             {
                 var bufferView = await _bufferImporter.GetBufferViewAsync(image.BufferView);
-                return await _textureLoader.CreateTexture(bufferView.Data, image.MimeType.Value.ToString(), isLinear);
+                return await _textureLoader.CreateTexture(bufferView.Data, image.MimeType.Value.ToString(), target);
             }
             else
             {

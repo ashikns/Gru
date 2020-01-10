@@ -1,4 +1,5 @@
 ﻿using Gru.Extensions;
+using Gru.Loaders;
 using Gru.MaterialMaps;
 using System;
 using System.Collections.Generic;
@@ -60,7 +61,7 @@ namespace Gru.Importers
 
                 if (specGlossSchema.DiffuseTexture != null)
                 {
-                    var texture = await _textureImporter.GetTextureAsync(specGlossSchema.DiffuseTexture.Index, false);
+                    var texture = await _textureImporter.GetTextureAsync(specGlossSchema.DiffuseTexture.Index, TextureTarget.Diffuse);
 
                     specGlossMap.DiffuseTexture = texture;
                     specGlossMap.DiffuseTexCoord = specGlossSchema.DiffuseTexture.TexCoord;
@@ -68,7 +69,7 @@ namespace Gru.Importers
 
                 if (specGlossSchema.SpecularGlossinessTexture != null)
                 {
-                    var texture = await _textureImporter.GetTextureAsync(specGlossSchema.SpecularGlossinessTexture.Index, false);
+                    var texture = await _textureImporter.GetTextureAsync(specGlossSchema.SpecularGlossinessTexture.Index, TextureTarget.Specular);
 
                     specGlossMap.SpecularGlossinessTexture = texture;
                     specGlossMap.SpecularGlossinessTexCoord = specGlossSchema.SpecularGlossinessTexture.TexCoord;
@@ -88,7 +89,7 @@ namespace Gru.Importers
 
                 if (metallicSchema.BaseColorTexture != null)
                 {
-                    var texture = await _textureImporter.GetTextureAsync(metallicSchema.BaseColorTexture.Index, false);
+                    var texture = await _textureImporter.GetTextureAsync(metallicSchema.BaseColorTexture.Index, TextureTarget.Diffuse);
 
                     metallicMap.BaseColorTexture = texture;
                     metallicMap.BaseColorTexCoord = metallicSchema.BaseColorTexture.TexCoord;
@@ -96,7 +97,7 @@ namespace Gru.Importers
 
                 if (metallicSchema.MetallicRoughnessTexture != null)
                 {
-                    var texture = await _textureImporter.GetTextureAsync(metallicSchema.MetallicRoughnessTexture.Index, false);
+                    var texture = await _textureImporter.GetTextureAsync(metallicSchema.MetallicRoughnessTexture.Index, TextureTarget.Metal);
 
                     metallicMap.MetallicRoughnessTexture = texture;
                     metallicMap.BaseColorTexCoord = metallicSchema.MetallicRoughnessTexture.TexCoord;
@@ -113,7 +114,7 @@ namespace Gru.Importers
 
             if (materialSchema.NormalTexture != null)
             {
-                var texture = await _textureImporter.GetTextureAsync(materialSchema.NormalTexture.Index, true);
+                var texture = await _textureImporter.GetTextureAsync(materialSchema.NormalTexture.Index, TextureTarget.Normal);
 
                 materialMap.NormalTexture = texture;
                 materialMap.NormalTexCoord = materialSchema.NormalTexture.TexCoord;
@@ -122,7 +123,7 @@ namespace Gru.Importers
 
             if (materialSchema.OcclusionTexture != null)
             {
-                var texture = await _textureImporter.GetTextureAsync(materialSchema.OcclusionTexture.Index, true);
+                var texture = await _textureImporter.GetTextureAsync(materialSchema.OcclusionTexture.Index, TextureTarget.Occlusion);
 
                 materialMap.OcclusionTexture = texture;
                 materialMap.OcclusionTexCoord = materialSchema.OcclusionTexture.TexCoord;
@@ -131,7 +132,7 @@ namespace Gru.Importers
 
             if (materialSchema.EmissiveTexture != null)
             {
-                var texture = await _textureImporter.GetTextureAsync(materialSchema.EmissiveTexture.Index, false);
+                var texture = await _textureImporter.GetTextureAsync(materialSchema.EmissiveTexture.Index, TextureTarget.Emission);
 
                 materialMap.EmissiveTexture = texture;
                 materialMap.EmissiveTexCoord = materialSchema.EmissiveTexture.TexCoord;
