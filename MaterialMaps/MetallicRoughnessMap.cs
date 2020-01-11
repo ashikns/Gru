@@ -48,8 +48,8 @@ namespace Gru.MaterialMaps
 		}
 		public float RoughnessFactor
 		{
-			get { return Material.GetFloat("_Glossiness"); }
-			set { Material.SetFloat("_Glossiness", value); }
+			get { return 1 - Material.GetFloat("_Glossiness"); }
+			set { Material.SetFloat("_Glossiness", 1 - value); }
 		}
 	}
 }
