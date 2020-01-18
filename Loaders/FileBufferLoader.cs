@@ -3,6 +3,9 @@ using System.Threading.Tasks;
 
 namespace Gru.Loaders
 {
+    /// <summary>
+    /// Reads buffer from a file located on disk.
+    /// </summary>
     public class FileBufferLoader : IBufferLoader
     {
         private string _modelDirectory;

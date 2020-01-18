@@ -42,11 +42,19 @@ namespace Gru.Importers
         private GLTFRoot _gltf;
         private byte[] _embeddedBuffer;
 
+        /// <summary>
+        /// Create an importer that can read the specified model.
+        /// </summary>
+        /// <param name="modelData">Stream used to access the model data. Class takes ownership of stream.</param>
         public GLTFImporter(Stream modelData)
         {
             _modelData = modelData;
         }
 
+        /// <summary>
+        /// Creates an in memory representation of a gltf model.
+        /// </summary>
+        /// <returns>Object that represents the gltf model</returns>
         public GLTFRoot Parse()
         {
             if (_gltf != null) { return _gltf; }
@@ -82,6 +90,10 @@ namespace Gru.Importers
             return _gltf;
         }
 
+        /// <summary>
+        /// Gets the list of files that are referred to by the model.
+        /// </summary>
+        /// <returns>The list of files</returns>
         public IEnumerable<string> ReferredFiles()
         {
             var gltf = Parse();
@@ -115,7 +127,6 @@ namespace Gru.Importers
         /// <summary>
         /// Imports a gltf/glb model as a Unity GameObject. Must be called from main thread.
         /// </summary>
-        /// <param name="modelDataStream">Stream used to access the model data. Function takes ownership of stream.</param>
         /// <param name="importOptions">Customizations applied to importer</param>
         /// <returns>Created Gameobject</returns>
         public async Task<GameObject> ImportAsync(ImportOptions importOptions)

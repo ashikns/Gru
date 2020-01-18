@@ -7,6 +7,10 @@ using UnityEngine.Networking;
 
 namespace Gru.Loaders
 {
+    /// <summary>
+    /// Creates texture from a http resource.
+    /// Note that this can also be used to read files on disk since Unity WebRequest has limited support for file:/// syntax.
+    /// </summary>
     public class WebTextureLoader : ITextureLoader
     {
         public List<float> Progress { get; }

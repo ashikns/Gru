@@ -80,7 +80,8 @@ namespace Gru.Importers
             IList<GLTF.Schema.Accessor> accessors,
             BufferImporter bufferImporter)
         {
-            // Input of sampler should be linear, increasing, and min max defined,
+            // Input of sampler should be linear, increasing, and min max defined.
+            // They may not be equally spaced however so it still has to be read from buffer.
             var input = accessors[sampler.Input.Key];
             var t_beg = input.Min[0];
             var t_end = input.Max[0];

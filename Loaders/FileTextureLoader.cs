@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace Gru.Loaders
 {
+    /// <summary>
+    /// Creates texture from a file located on disk.
+    /// </summary>
     public class FileTextureLoader : ITextureLoader
     {
         private readonly IBufferLoader _bufferLoader;
