@@ -13,7 +13,7 @@ namespace Gru.Importers
     {
         private readonly IList<GLTF.Schema.Buffer> _bufferSchemas;
         private readonly IList<GLTF.Schema.BufferView> _bufferViewSchemas;
-        private readonly IFileLoader _fileLoader;
+        private readonly IBufferLoader _bufferLoader;
 
         private readonly Lazy<Task<byte[]>>[] _buffers;
         private readonly Lazy<Task<BufferView>>[] _bufferViews;
@@ -21,11 +21,11 @@ namespace Gru.Importers
         public BufferImporter(
             IList<GLTF.Schema.Buffer> buffers,
             IList<GLTF.Schema.BufferView> bufferViews,
-            IFileLoader fileLoader)
+            IBufferLoader bufferLoader)
         {
             _bufferSchemas = buffers;
             _bufferViewSchemas = bufferViews;
-            _fileLoader = fileLoader;
+            _bufferLoader = bufferLoader;
 
             _buffers = new Lazy<Task<byte[]>>[_bufferSchemas?.Count ?? 0];
             _bufferViews = new Lazy<Task<BufferView>>[_bufferViewSchemas?.Count ?? 0];
@@ -54,7 +54,7 @@ namespace Gru.Importers
 
             var bufferSchema = _bufferSchemas[bufferViewSchema.Buffer.Key];
             var buffer = await _buffers.ThreadSafeGetOrAdd(
-                bufferViewSchema.Buffer.Key, () => ReadBuffer(bufferSchema, _fileLoader));
+                bufferViewSchema.Buffer.Key, () => ReadBuffer(bufferSchema, _bufferLoader));
 
             var bufferView = new BufferView
             {
@@ -65,7 +65,7 @@ namespace Gru.Importers
             return bufferView;
         }
 
-        private static async Task<byte[]> ReadBuffer(GLTF.Schema.Buffer buffer, IFileLoader fileLoader)
+        private static async Task<byte[]> ReadBuffer(GLTF.Schema.Buffer buffer, IBufferLoader bufferLoader)
         {
             if (string.IsNullOrEmpty(buffer.Uri))
             {
@@ -77,12 +77,12 @@ namespace Gru.Importers
             }
             else
             {
-                if (fileLoader == null)
+                if (bufferLoader == null)
                 {
-                    throw new Exception($"{nameof(fileLoader)} is null. Can't read buffer data.");
+                    throw new Exception($"{nameof(bufferLoader)} is null. Can't read buffer data.");
                 }
 
-                return await fileLoader.ReadContentsAsync(buffer.Uri);
+                return await bufferLoader.ReadContentsAsync(buffer.Uri);
             }
         }
     }

@@ -2,7 +2,7 @@
 
 namespace Gru.Loaders
 {
-    public interface IFileLoader
+    public interface IBufferLoader
     {
         /// <summary>
         /// Reads the data from file as bytes.

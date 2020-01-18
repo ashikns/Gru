@@ -4,19 +4,19 @@ using UnityEngine;
 
 namespace Gru.Loaders
 {
-    public class SimpleTextureLoader : ITextureLoader
+    public class FileTextureLoader : ITextureLoader
     {
-        private readonly IFileLoader _fileLoader;
+        private readonly IBufferLoader _bufferLoader;
 
-        public SimpleTextureLoader(IFileLoader fileLoader)
+        public FileTextureLoader(IBufferLoader bufferLoader)
         {
-            _fileLoader = fileLoader;
+            _bufferLoader = bufferLoader;
         }
 
         public async Task<Texture2D> CreateTexture(string relativePath, TextureTarget target)
         {
             var isLinear = target == TextureTarget.Normal || target == TextureTarget.Occlusion;
-            var imageData = await _fileLoader.ReadContentsAsync(relativePath);
+            var imageData = await _bufferLoader.ReadContentsAsync(relativePath);
             var texture = new Texture2D(0, 0, TextureFormat.RGBA32, true, isLinear);
             texture.LoadImage(imageData, true);
             return texture;

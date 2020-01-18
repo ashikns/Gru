@@ -6,7 +6,7 @@ using UnityEngine.Networking;
 
 namespace Gru.Loaders
 {
-    public class WebRequestFileLoader : IFileLoader
+    public class WebBufferLoader : IBufferLoader
     {
         public List<float> Progress { get; }
 
@@ -14,7 +14,7 @@ namespace Gru.Loaders
         private readonly Func<string, Task<string>> _defaultUriRetriever;
         private readonly Func<string, Task<string>> _fallbackUriRetriever;
 
-        public WebRequestFileLoader(
+        public WebBufferLoader(
             Action<IEnumerator> coroutineStarter,
             Func<string, Task<string>> defaultUriRetriever,
             Func<string, Task<string>> fallbackUriRetriever)

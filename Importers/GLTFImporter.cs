@@ -13,18 +13,18 @@ namespace Gru.Importers
 {
     public class ImportOptions
     {
-        public static ImportOptions MakeDefault(IFileLoader fileLoader)
+        public static ImportOptions MakeDefault(IBufferLoader bufferLoader)
         {
             return new ImportOptions
             {
-                FileLoader = fileLoader,
-                TextureLoader = new SimpleTextureLoader(fileLoader),
+                BufferLoader = bufferLoader,
+                TextureLoader = new FileTextureLoader(bufferLoader),
                 MetalRoughFactory = () => new MetallicRoughnessMap(),
                 SpecGlossFactory = () => new SpecularGlossinessMap()
             };
         }
 
-        public IFileLoader FileLoader { get; set; }
+        public IBufferLoader BufferLoader { get; set; }
         public ITextureLoader TextureLoader { get; set; }
         public Func<IMetallicRoughnessMap> MetalRoughFactory { get; set; }
         public Func<ISpecularGlossinessMap> SpecGlossFactory { get; set; }
@@ -45,7 +45,7 @@ namespace Gru.Importers
         {
             return ImportAsync(
                 File.Open(modelFilePath, FileMode.Open),
-                ImportOptions.MakeDefault(new SimpleFileLoader(Path.GetDirectoryName(modelFilePath))));
+                ImportOptions.MakeDefault(new FileBufferLoader(Path.GetDirectoryName(modelFilePath))));
         }
 
 
@@ -122,7 +122,7 @@ namespace Gru.Importers
                     }
                 }
 
-                bufferImporter = new BufferImporter(glTFRoot.Buffers, glTFRoot.BufferViews, importOptions.FileLoader);
+                bufferImporter = new BufferImporter(glTFRoot.Buffers, glTFRoot.BufferViews, importOptions.BufferLoader);
                 textureImporter = new TextureImporter(glTFRoot.Textures, glTFRoot.Images, glTFRoot.Samplers, bufferImporter, importOptions.TextureLoader);
                 materialImporter = new MaterialImporter(glTFRoot.Materials, textureImporter, importOptions.MetalRoughFactory, importOptions.SpecGlossFactory);
                 meshImporter = new MeshImporter(glTFRoot.Meshes, glTFRoot.Accessors, bufferImporter, materialImporter);

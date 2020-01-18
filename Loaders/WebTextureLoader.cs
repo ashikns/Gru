@@ -7,34 +7,34 @@ using UnityEngine.Networking;
 
 namespace Gru.Loaders
 {
-    public class WebRequestTextureLoader : ITextureLoader
+    public class WebTextureLoader : ITextureLoader
     {
         public List<float> Progress { get; }
 
         private readonly Action<IEnumerator> _coroutineStarter;
         private readonly Func<string, Task<string>> _defaultUriRetriever;
         private readonly Func<string, Task<string>> _fallbackUriRetriever;
-        private readonly IFileLoader _fileLoader;
+        private readonly IBufferLoader _bufferLoader;
 
-        public WebRequestTextureLoader(
+        public WebTextureLoader(
             Action<IEnumerator> coroutineStarter,
             Func<string, Task<string>> defaultUriRetriever,
             Func<string, Task<string>> fallbackUriRetriever,
-            IFileLoader fileLoader)
+            IBufferLoader bufferLoader)
         {
             Progress = new List<float>();
 
             _coroutineStarter = coroutineStarter;
             _defaultUriRetriever = defaultUriRetriever;
             _fallbackUriRetriever = fallbackUriRetriever;
-            _fileLoader = fileLoader;
+            _bufferLoader = bufferLoader;
         }
 
         public async Task<Texture2D> CreateTexture(string relativePath, TextureTarget target)
         {
             if (target == TextureTarget.Normal || target == TextureTarget.Occlusion)
             {
-                var imageData = await Task.Run(() => _fileLoader.ReadContentsAsync(relativePath));
+                var imageData = await Task.Run(() => _bufferLoader.ReadContentsAsync(relativePath));
                 var texture = new Texture2D(0, 0, TextureFormat.RGBA32, true, true);
                 if (!texture.LoadImage(imageData, true))
                 {

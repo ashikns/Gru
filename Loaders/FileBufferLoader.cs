@@ -3,11 +3,11 @@ using System.Threading.Tasks;
 
 namespace Gru.Loaders
 {
-    public class SimpleFileLoader : IFileLoader
+    public class FileBufferLoader : IBufferLoader
     {
         private string _modelDirectory;
 
-        public SimpleFileLoader(string modelDirectory)
+        public FileBufferLoader(string modelDirectory)
         {
             _modelDirectory = modelDirectory;
         }
