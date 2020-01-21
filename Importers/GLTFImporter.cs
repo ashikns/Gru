@@ -72,17 +72,17 @@ namespace Gru.Importers
             }
             else
             {
-                _modelData.Position = glbDetails.JsonChunkStart;
-                using (var jsonReader = new JsonTextReader(new StreamReader(_modelData)))
-                {
-                    _gltf = serializer.Deserialize<GLTFRoot>(jsonReader);
-                }
-
                 if (glbDetails.HasEmbeddedBuffer)
                 {
                     _embeddedBuffer = new byte[glbDetails.BufferChunkLength];
                     _modelData.Position = glbDetails.BufferChunkStart;
                     _modelData.Read(_embeddedBuffer, 0, glbDetails.BufferChunkLength);
+                }
+
+                _modelData.Position = glbDetails.JsonChunkStart;
+                using (var jsonReader = new JsonTextReader(new StreamReader(_modelData)))
+                {
+                    _gltf = serializer.Deserialize<GLTFRoot>(jsonReader);
                 }
             }
 
