@@ -21,7 +21,8 @@ namespace Gru.Importers
                 BufferLoader = bufferLoader,
                 TextureLoader = new FileTextureLoader(bufferLoader),
                 MetalRoughFactory = () => new MetallicRoughnessMap(),
-                SpecGlossFactory = () => new SpecularGlossinessMap()
+                SpecGlossFactory = () => new SpecularGlossinessMap(),
+                ActiveOnImport = true
             };
         }
 
@@ -29,6 +30,7 @@ namespace Gru.Importers
         public ITextureLoader TextureLoader { get; set; }
         public Func<IMetallicRoughnessMap> MetalRoughFactory { get; set; }
         public Func<ISpecularGlossinessMap> SpecGlossFactory { get; set; }
+        public bool ActiveOnImport { get; set; }
     }
 
     /// <summary>
@@ -173,6 +175,7 @@ namespace Gru.Importers
             var sceneSchema = glTFRoot.Scenes[glTFRoot.Scene.Key];
             var sceneObj = new GameObject(!string.IsNullOrEmpty(sceneSchema.Name)
                 ? sceneSchema.Name : $"GLTFScene_{glTFRoot.Scene.Key}");
+            sceneObj.SetActive(false);
 
             foreach (var nodeId in sceneSchema.Nodes)
             {
@@ -199,6 +202,10 @@ namespace Gru.Importers
                 }
             }
 
+            if (importOptions.ActiveOnImport)
+            {
+                sceneObj.SetActive(true);
+            }
             return sceneObj;
         }
 
