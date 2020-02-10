@@ -172,7 +172,7 @@ namespace Gru.Importers
                 bufferImporter.SetGlbEmbeddedBuffer(_embeddedBuffer);
             }
 
-            var sceneSchema = glTFRoot.Scenes[glTFRoot.Scene.Key];
+            var sceneSchema = glTFRoot.Scenes[glTFRoot.Scene?.Key ?? 0];
             var sceneObj = new GameObject(!string.IsNullOrEmpty(sceneSchema.Name)
                 ? sceneSchema.Name : $"GLTFScene_{glTFRoot.Scene.Key}");
             sceneObj.SetActive(false);
