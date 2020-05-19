@@ -195,7 +195,7 @@ namespace Gru.Extensions
 
             var totalOffset = bufferView.Data.Offset + accessor.ByteOffset;
             var componentSize = accessor.GetComponentSize();
-            uint stride = bufferView.Stride > 0 ? bufferView.Stride : componentSize * 4;
+            uint stride = bufferView.Stride > 0 ? bufferView.Stride : componentSize * 4 * 4;
 
             var flipVal = convert ? -1.0f : 1.0f;
 
